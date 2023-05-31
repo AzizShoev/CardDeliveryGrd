@@ -1,15 +1,9 @@
 package ru.netology;
 
 import com.codeborne.selenide.Configuration;
-import io.github.bonigarcia.wdm.WebDriverManager;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.Keys;
-import org.openqa.selenium.WebDriver;
-import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.chrome.ChromeOptions;
 
 import java.time.Duration;
 
@@ -20,58 +14,37 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CardDeliveryTest {
 
-    WebDriver driver;
-    ChromeOptions options;
-
-    @BeforeAll
-    static void setupAll() {
-        WebDriverManager.chromedriver().setup();
-    }
-
     @BeforeEach
     void setup() {
         Configuration.headless = true;
-        options = new ChromeOptions();
-        options.addArguments("--disable-dev-shm-usage");
-        options.addArguments("--no-sandbox");
-        options.addArguments("--headless");
-        driver = new ChromeDriver(options);
         open("http://localhost:9999/");
     }
 
-    @AfterEach
-    void teardown() {
-        driver.quit();
-        driver = null;
-    }
-
-    String fullDateGenerator(int dayToAdd) {
+    String dateGenerator(int dayToAdd, String pattern) {
         return java.time.LocalDate.now()
-                .plusDays(dayToAdd).format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"));
-    }
-
-    String dayGenerator(int addDays) {
-        return java.time.LocalDate.now()
-                .plusDays(addDays).format(java.time.format.DateTimeFormatter.ofPattern("d"));
+                .plusDays(dayToAdd).format(java.time.format.DateTimeFormatter.ofPattern(pattern));
     }
 
     @Test
     void shouldSuccessfullyOrderDeliveryCard() {
         $("[data-test-id='city'] input").setValue("Казань");
         $("[data-test-id='date'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.DELETE);
-        $("[data-test-id='date'] input").setValue(fullDateGenerator(7));
+        $("[data-test-id='date'] input").setValue(dateGenerator(7, "dd.MM.yyyy"));
         $("[data-test-id='name'] input").setValue("Иванов Иван");
         $("[data-test-id='phone'] input").setValue("+71234567890");
         $("[data-test-id='agreement'] .checkbox__text").click();
         $("button.button_theme_alfa-on-white").click();
-        $(withText("Успешно!")).should(visible, Duration.ofMillis(15000));
+        $("[data-test-id='notification'] .notification__content").should(visible, Duration.ofMillis(13000));
+
+        assertEquals("Встреча успешно забронирована на " + dateGenerator(7, "dd.MM.yyyy") + "",
+                $("[data-test-id='notification'] .notification__content").getText());
     }
 
     @Test
     void shouldWrongCityInCityInput() {
         $("[data-test-id='city'] input").setValue("Югра");
         $("[data-test-id='date'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.DELETE);
-        $("[data-test-id='date'] input").setValue(fullDateGenerator(4));
+        $("[data-test-id='date'] input").setValue(dateGenerator(4, "dd.MM.yyyy"));
         $("[data-test-id='name'] input").setValue("Иванов Иван");
         $("[data-test-id='phone'] input").setValue("+71234567890");
         $("[data-test-id='agreement'] .checkbox__text").click();
@@ -85,7 +58,7 @@ public class CardDeliveryTest {
     void shouldWrongDateInDateInput() {
         $("[data-test-id='city'] input").setValue("Казань");
         $("[data-test-id='date'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.DELETE);
-        $("[data-test-id='date'] input").setValue(fullDateGenerator(2));
+        $("[data-test-id='date'] input").setValue(dateGenerator(2, "dd.MM.yyyy"));
         $("[data-test-id='name'] input").setValue("Иванов Иван");
         $("[data-test-id='phone'] input").setValue("+71234567890");
         $("[data-test-id='agreement'] .checkbox__text").click();
@@ -99,7 +72,7 @@ public class CardDeliveryTest {
     void shouldWrongNameInNameInput() {
         $("[data-test-id='city'] input").setValue("Казань");
         $("[data-test-id='date'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.DELETE);
-        $("[data-test-id='date'] input").setValue(fullDateGenerator(3));
+        $("[data-test-id='date'] input").setValue(dateGenerator(3, "dd.MM.yyyy"));
         $("[data-test-id='name'] input").setValue("Ivanov Ivan");
         $("[data-test-id='phone'] input").setValue("+71234567890");
         $("[data-test-id='agreement'] .checkbox__text").click();
@@ -113,7 +86,7 @@ public class CardDeliveryTest {
     void shouldWrongPhoneInPhoneInput() {
         $("[data-test-id='city'] input").setValue("Казань");
         $("[data-test-id='date'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.DELETE);
-        $("[data-test-id='date'] input").setValue(fullDateGenerator(3));
+        $("[data-test-id='date'] input").setValue(dateGenerator(3, "dd.MM.yyyy"));
         $("[data-test-id='name'] input").setValue("Иванов Иван");
         $("[data-test-id='phone'] input").setValue("81234567890");
         $("[data-test-id='agreement'] .checkbox__text").click();
@@ -127,7 +100,7 @@ public class CardDeliveryTest {
     void shouldUncheckedAgreement() {
         $("[data-test-id='city'] input").setValue("Казань");
         $("[data-test-id='date'] input").sendKeys(Keys.chord(Keys.SHIFT, Keys.HOME), Keys.DELETE);
-        $("[data-test-id='date'] input").setValue(fullDateGenerator(3));
+        $("[data-test-id='date'] input").setValue(dateGenerator(3, "dd.MM.yyyy"));
         $("[data-test-id='name'] input").setValue("Иванов Иван");
         $("[data-test-id='phone'] input").setValue("+71234567890");
         $("button.button_theme_alfa-on-white").click();
@@ -136,33 +109,18 @@ public class CardDeliveryTest {
     }
 
     @Test
-    void shouldChoseInDropListCityWithKeyboard() {
-        $("[data-test-id='city'] input").setValue("Ка");
-        $("[data-test-id='city'] input").sendKeys(Keys.DOWN, Keys.DOWN, Keys.DOWN, Keys.UP, Keys.ENTER);
+    void shouldSuccessfullyOrderDeliveryCardWithDropListCityAndCalendarWidget() {
+        $(byXpath("//span[@data-test-id='city'] //input")).setValue("Ка");
+        $(byXpath("//span[@class='menu-item__control' and text()='Махачкала']")).click();
+        $(byXpath("//span[@data-test-id='date'] //button")).click();
+        $(byXpath("//td[contains(text(),'" + dateGenerator(7, "d") + "')]")).click();
+        $(byXpath("//span[@data-test-id='name'] //input")).setValue("Иванов Иван");
+        $(byXpath("//span[@data-test-id='phone'] //input")).setValue("+71234567890");
+        $(byXpath("//label[@data-test-id='agreement']/span[@class='checkbox__text']")).click();
+        $(byXpath("//span[@class='button__text']")).click();
+        $(byXpath("//div[@class='notification__content']")).should(visible, Duration.ofMillis(15000));
 
-        assertEquals("Владикавказ",
-                $("[data-test-id='city'] .input__control").getValue());
-    }
-
-    @Test
-    void shouldChoseInDropListCityClick() {
-        $("[data-test-id='city'] input").setValue("Ка");
-        $(byXpath("//span[@class='menu-item__control' and text()='Краснодар']")).click();
-
-        assertEquals("Краснодар",
-                $("[data-test-id='city'] .input__control").getValue());
-    }
-
-    @Test
-    void shouldChoseDateInCalendarWidget() {
-        $("[data-test-id='date'] .icon-button").click();
-        $(".popup_visible [data-step='1'].calendar__arrow_direction_right").click();
-        $(".popup_visible [data-step='-1'].calendar__arrow_direction_left").click();
-        $(".popup_visible [data-step='12'].calendar__arrow_direction_right").click();
-        $(".popup_visible [data-step='-12'].calendar__arrow_direction_left").click();
-        $(byXpath("//td[contains(text(),'" + dayGenerator(7) + "')]")).click();
-
-        assertEquals("" + fullDateGenerator(7) + "",
-                $("[data-test-id='date'] .input__control").getValue());
+        assertEquals("Встреча успешно забронирована на " + dateGenerator(7, "dd.MM.yyyy") + "",
+                $(byXpath("//div[@class='notification__content']")).getText());
     }
 }
