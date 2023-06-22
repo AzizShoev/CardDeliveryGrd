@@ -1,1 +1,1 @@
-# DeliveryCard [![Build status](https://ci.appveyor.com/api/projects/status/x7lrq2cxgyfoacfw?svg=true)](https://ci.appveyor.com/project/AzizShoev/carddeliverygrd)
+# DeliveryCard [![Build status](https://ci.appveyor.com/api/projects/status/fhbsf0134i1d6417?svg=true)](https://ci.appveyor.com/project/AzizShoev/carddeliverygrd)
